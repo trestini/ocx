@@ -15,26 +15,26 @@ enum AgentCommands {
     },
     /// List available agents
     List,
-        /// Create a new agent specific for this project
-        New {
-            /// Agent name
-            name: String,
-            /// Model that this agent must use
-            #[arg(short = 'm', long = "model", required = true)]
-            model: String,
-            /// Model type (primary or subagent)
-            #[arg(short = 't', long = "type", default_value = "primary")]
-            model_type: String,
-            /// System instruction for the agent
-            #[arg(short = 'p', long = "prompt")]
-            prompt: Option<String>,
-            /// Allowed permissions
-            #[arg(long = "allowed", default_value = "read,grep", value_delimiter = ',')]
-            allowed: Vec<String>,
-            /// Denied permissions
-            #[arg(long = "denied", default_value = "*", value_delimiter = ',')]
-            denied: Vec<String>,
-        },
+    /// Create a new agent specific for this project
+    New {
+        /// Agent name
+        name: String,
+        /// Model that this agent must use
+        #[arg(short = 'm', long = "model", required = true)]
+        model: String,
+        /// Model type (primary or subagent)
+        #[arg(short = 't', long = "type", default_value = "primary")]
+        model_type: String,
+        /// System instruction for the agent
+        #[arg(short = 'p', long = "prompt")]
+        prompt: Option<String>,
+        /// Allowed permissions
+        #[arg(long = "allowed", default_value = "read,grep", value_delimiter = ',')]
+        allowed: Vec<String>,
+        /// Denied permissions
+        #[arg(long = "denied", default_value = "*", value_delimiter = ',')]
+        denied: Vec<String>,
+    },
     /// Remove an agent from the current project
     Rm {
         /// Agent name
@@ -44,6 +44,9 @@ enum AgentCommands {
 
 fn main() {
     let cli = Cli::parse();
+
+    let config = ocx_common::read_opencode_config(true);
+    println!("config: {config}");
 
     match &cli.command {
         AgentCommands::Add { name } => {

@@ -1,3 +1,8 @@
 [workspace]
-members = ["ocx", "ocx-new", "ocx-agent"]
+members = ["ocx", "ocx-new", "ocx-agent", "ocx-common"]
 resolver = "2"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"

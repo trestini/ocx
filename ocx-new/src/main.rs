@@ -10,6 +10,9 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
+    let config = ocx_common::read_opencode_config(false);
+    println!("config: {config}");
+
     match cli.agents {
         Some(agents) => println!("agents: {}", agents.join(", ")),
         None => println!("Project created without agents"),
