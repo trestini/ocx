@@ -1,0 +1,3 @@
+[workspace]
+members = ["ocx", "ocx-new", "ocx-agent"]
+resolver = "2"
