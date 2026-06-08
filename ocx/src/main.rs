@@ -1,44 +1,48 @@
-use clap::{CommandFactory, Parser, Subcommand};
 use std::process::Command;
 
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
+const HELP: &str = "\
+Usage: ocx [COMMAND]
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Create a new opencode project in the current directory
-    New,
-    /// Guide the user on setting up agents for opencode
-    Agent,
-}
+Commands:
+  new    Create a new opencode project in the current directory
+  agent  Guide the user on setting up agents for opencode
+  help   Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+";
 
 fn main() {
-    let cli = Cli::parse();
+    let args: Vec<String> = std::env::args().collect();
+    let subcommand = args.get(1).map(|s| s.as_str());
 
-    match &cli.command {
-        Some(Commands::New) => run_binary("ocx-new"),
-        Some(Commands::Agent) => run_binary("ocx-agent"),
-        None => {
-            let mut cmd = Cli::command();
-            cmd.print_help().unwrap();
+    match subcommand {
+        Some(cmd @ ("new" | "agent")) => {
+            let binary = format!("ocx-{cmd}");
+            let status = match Command::new(&binary).args(&args[2..]).status() {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("error: failed to run `{binary}`: {e}");
+                    std::process::exit(1);
+                }
+            };
+            std::process::exit(status.code().unwrap_or(1));
+        }
+        Some("help" | "-h" | "--help") => {
+            println!("{HELP}");
+        }
+        Some("-V" | "--version") => {
+            println!("ocx 0.1.0");
+        }
+        Some(cmd) => {
+            eprintln!("error: unknown subcommand '{cmd}'");
             println!();
+            println!("{HELP}");
+            std::process::exit(2);
+        }
+        None => {
+            println!("{HELP}");
         }
     }
-}
-
-fn run_binary(name: &str) {
-    let status = match Command::new(name).status() {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: failed to run `{name}`: {e}");
-            std::process::exit(1);
-        }
-    };
-
-    let code = status.code().unwrap_or(1);
-    std::process::exit(code);
 }
