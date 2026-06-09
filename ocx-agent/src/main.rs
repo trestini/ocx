@@ -14,7 +14,11 @@ enum AgentCommands {
         name: String,
     },
     /// List available agents
-    List,
+    List {
+        /// List system-wide installed agents
+        #[arg(long = "system")]
+        system: bool,
+    },
     /// Create a new agent specific for this project
     New {
         /// Agent name
@@ -45,15 +49,34 @@ enum AgentCommands {
 fn main() {
     let cli = Cli::parse();
 
-    let config = ocx_common::read_opencode_config(true);
-    println!("config: {config}");
-
     match &cli.command {
         AgentCommands::Add { name } => {
             println!("add agent: {name}");
         }
-        AgentCommands::List => {
-            println!("list agents");
+        AgentCommands::List { system } => {
+            if !system {
+                println!("no agents configured");
+                return;
+            }
+            let entries = ocx_common::list_system_agents();
+            let mut counts: std::collections::HashMap<&str, usize> =
+                std::collections::HashMap::new();
+            for (name, _) in &entries {
+                *counts.entry(name).or_insert(0) += 1;
+            }
+
+            let mut seqs: std::collections::HashMap<&str, usize> =
+                std::collections::HashMap::new();
+
+            for (name, path) in &entries {
+                if counts[name.as_str()] == 1 {
+                    println!("{name}");
+                } else {
+                    let seq = seqs.entry(name).or_insert(0);
+                    *seq += 1;
+                    println!("{name}.{seq} ({})", path.display());
+                }
+            }
         }
         AgentCommands::New {
             name,
