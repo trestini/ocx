@@ -112,7 +112,7 @@ pub fn read_and_convert_agent(path: &Path) -> Result<(String, serde_json::Value)
     Ok((agent_name, base))
 }
 
-pub fn add_agent_to_config(name: &str) -> Result<serde_json::Value, String> {
+pub fn add_agent_to_config(config: &mut serde_json::Value, name: &str) -> Result<(), String> {
     let system_agents = list_system_agents();
 
     let agent_path = system_agents
@@ -123,8 +123,6 @@ pub fn add_agent_to_config(name: &str) -> Result<serde_json::Value, String> {
 
     let (_agent_name, agent_value) = read_and_convert_agent(&agent_path)?;
 
-    let mut config = read_opencode_config(true)?;
-
     if let Some(obj) = config.as_object_mut() {
         if !obj.contains_key("agent") {
             obj.insert("agent".to_string(), serde_json::json!({}));
@@ -134,5 +132,5 @@ pub fn add_agent_to_config(name: &str) -> Result<serde_json::Value, String> {
         }
     }
 
-    Ok(config)
+    Ok(())
 }

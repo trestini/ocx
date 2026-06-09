@@ -21,15 +21,21 @@ fn main() {
 
     fs::create_dir(opencode_dir).expect("failed to create .opencode directory");
 
-    if cli.agents.is_some() {
-        println!("evaluating --agents");
-    }
-
-    let config = serde_json::json!({
+    let mut config = serde_json::json!({
         "$schema": "https://opencode.ai/config.json"
     });
 
-    let config_str = serde_json::to_string_pretty(&config).expect("failed to serialize config");
-    fs::write(opencode_dir.join("opencode.json"), config_str)
-        .expect("failed to write opencode.json");
+    if let Some(agents) = &cli.agents {
+        for name in agents {
+            ocx_common::add_agent_to_config(&mut config, name).unwrap_or_else(|e| {
+                println!("{e}");
+                std::process::exit(1);
+            });
+        }
+    }
+
+    ocx_common::write_local_config(&config).unwrap_or_else(|e| {
+        eprintln!("error: {e}");
+        std::process::exit(1);
+    });
 }

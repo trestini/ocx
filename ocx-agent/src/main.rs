@@ -62,7 +62,12 @@ fn main() {
         AgentCommands::Add { name } => {
             require_local_project();
 
-            let config = ocx_common::add_agent_to_config(name).unwrap_or_else(|e| {
+            let mut config = ocx_common::read_opencode_config(true).unwrap_or_else(|e| {
+                eprintln!("error: {e}");
+                std::process::exit(1);
+            });
+
+            ocx_common::add_agent_to_config(&mut config, name).unwrap_or_else(|e| {
                 println!("{e}");
                 // TODO: re-evaluate exit codes
                 std::process::exit(1);
