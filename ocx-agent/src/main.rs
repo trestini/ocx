@@ -15,6 +15,7 @@ enum AgentCommands {
         name: String,
     },
     /// List available agents
+    #[command(alias = "ls")]
     List {
         /// List system-wide installed agents
         #[arg(long = "system")]
@@ -46,7 +47,8 @@ enum AgentCommands {
         name: String,
     },
     /// Remove an agent from the current project
-    Rm {
+    #[command(alias = "rm")]
+    Remove {
         /// Agent name
         name: String,
     },
@@ -89,7 +91,19 @@ fn main() {
             require_local_project();
 
             if !system {
-                println!("no agents configured");
+                let config = ocx_common::read_opencode_config(true).unwrap_or_else(|e| {
+                    eprintln!("error: {e}");
+                    std::process::exit(1);
+                });
+                let names: Vec<&str> = config
+                    .as_object()
+                    .and_then(|obj| obj.get("agent"))
+                    .and_then(|v| v.as_object())
+                    .map(|agents| agents.keys().map(|k| k.as_str()).collect())
+                    .unwrap_or_default();
+                for name in names {
+                    println!("{name}");
+                }
                 return;
             }
             let entries = ocx_common::list_system_agents();
@@ -157,7 +171,7 @@ fn main() {
 
             println!("{markdown}");
         }
-        AgentCommands::Rm { name } => {
+        AgentCommands::Remove { name } => {
             require_local_project();
 
             let mut config = ocx_common::read_opencode_config(true).unwrap_or_else(|e| {
