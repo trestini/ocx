@@ -29,17 +29,17 @@ enum AgentCommands {
         #[arg(short = 'm', long = "model", required = true)]
         model: String,
         /// Model type (primary or subagent)
-        #[arg(short = 't', long = "type", default_value = "primary")]
-        model_type: String,
+        #[arg(short = 't', long = "type")]
+        model_type: Option<String>,
         /// System instruction for the agent
         #[arg(short = 'p', long = "prompt")]
         prompt: Option<String>,
         /// Allowed permissions
-        #[arg(long = "allowed", default_value = "read,grep", value_delimiter = ',')]
-        allowed: Vec<String>,
+        #[arg(long = "allow", value_delimiter = ',')]
+        allowed: Option<Vec<String>>,
         /// Denied permissions
-        #[arg(long = "denied", default_value = "*", value_delimiter = ',')]
-        denied: Vec<String>,
+        #[arg(long = "denied", value_delimiter = ',')]
+        denied: Option<Vec<String>>,
     },
     /// Export an agent to markdown
     Export {
@@ -135,15 +135,71 @@ fn main() {
             denied,
         } => {
             require_local_project();
-            println!("create agent:");
-            println!("  name: {name}");
-            println!("  model: {model}");
-            println!("  type: {model_type}");
-            if let Some(p) = prompt {
-                println!("  prompt: {p}");
+
+            let mut agent = serde_json::Map::new();
+            agent.insert("model".to_string(), serde_json::json!(model));
+
+            if let Some(t) = model_type {
+                agent.insert("type".to_string(), serde_json::json!(t));
             }
-            println!("  allowed: {}", allowed.join(", "));
-            println!("  denied: {}", denied.join(", "));
+            if let Some(p) = prompt {
+                agent.insert("prompt".to_string(), serde_json::json!(p));
+            }
+
+            let mut permission = serde_json::Map::new();
+            let args: Vec<String> = std::env::args().collect();
+            let deny_first = args.iter().position(|a| a == "--allow" || a == "--denied")
+                .is_some_and(|i| args[i] == "--denied");
+
+            if !deny_first {
+                if let Some(list) = allowed {
+                    for p in list {
+                        permission.insert(p.to_string(), serde_json::json!("allow"));
+                    }
+                }
+                if let Some(list) = denied {
+                    for p in list {
+                        permission.insert(p.to_string(), serde_json::json!("deny"));
+                    }
+                }
+            } else {
+                if let Some(list) = denied {
+                    for p in list {
+                        permission.insert(p.to_string(), serde_json::json!("deny"));
+                    }
+                }
+                if let Some(list) = allowed {
+                    for p in list {
+                        permission.insert(p.to_string(), serde_json::json!("allow"));
+                    }
+                }
+            }
+            if !permission.is_empty() {
+                agent.insert("permission".to_string(), serde_json::Value::Object(permission));
+            }
+
+            let agent = serde_json::Value::Object(agent);
+
+            let mut config = ocx_common::read_opencode_config(true).unwrap_or_else(|e| {
+                eprintln!("error: {e}");
+                std::process::exit(1);
+            });
+
+            if let Some(obj) = config.as_object_mut() {
+                if !obj.contains_key("agent") {
+                    obj.insert("agent".to_string(), serde_json::json!({}));
+                }
+                if let Some(agent_obj) = obj.get_mut("agent").and_then(|v| v.as_object_mut()) {
+                    agent_obj.insert(name.clone(), agent);
+                }
+            }
+
+            ocx_common::write_local_config(&config).unwrap_or_else(|e| {
+                eprintln!("error: {e}");
+                std::process::exit(1);
+            });
+
+            println!("Agent {name} created");
         }
         AgentCommands::Export { name } => {
             require_local_project();
