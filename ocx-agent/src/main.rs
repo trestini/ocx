@@ -137,7 +137,31 @@ fn main() {
         }
         AgentCommands::Rm { name } => {
             require_local_project();
-            println!("remove agent: {name}");
+
+            let mut config = ocx_common::read_opencode_config(true).unwrap_or_else(|e| {
+                eprintln!("error: {e}");
+                std::process::exit(1);
+            });
+
+            let removed = config
+                .as_object_mut()
+                .and_then(|obj| obj.get_mut("agent"))
+                .and_then(|v| v.as_object_mut())
+                .and_then(|agents| agents.remove(name.as_str()))
+                .is_some();
+
+            if !removed {
+                println!("Agent {name} doesn't exists");
+                // TODO: re-evaluate exit codes
+                std::process::exit(1);
+            }
+
+            ocx_common::write_local_config(&config).unwrap_or_else(|e| {
+                eprintln!("error: {e}");
+                std::process::exit(1);
+            });
+
+            println!("Agent {name} removed from the project");
         }
     }
 }
