@@ -133,7 +133,29 @@ fn main() {
         }
         AgentCommands::Export { name } => {
             require_local_project();
-            println!("export agent: {name}");
+
+            let config = ocx_common::read_opencode_config(true).unwrap_or_else(|e| {
+                eprintln!("error: {e}");
+                std::process::exit(1);
+            });
+
+            let agent = config
+                .as_object()
+                .and_then(|obj| obj.get("agent"))
+                .and_then(|v| v.as_object())
+                .and_then(|agents| agents.get(name.as_str()))
+                .ok_or_else(|| format!("Agent {name} doesn't exists"))
+                .unwrap_or_else(|e| {
+                    println!("{e}");
+                    std::process::exit(1);
+                });
+
+            let markdown = ocx_common::agent_to_markdown(agent).unwrap_or_else(|e| {
+                eprintln!("error: {e}");
+                std::process::exit(1);
+            });
+
+            println!("{markdown}");
         }
         AgentCommands::Rm { name } => {
             require_local_project();

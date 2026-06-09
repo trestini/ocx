@@ -112,6 +112,23 @@ pub fn read_and_convert_agent(path: &Path) -> Result<(String, serde_json::Value)
     Ok((agent_name, base))
 }
 
+pub fn agent_to_markdown(agent: &serde_json::Value) -> Result<String, String> {
+    let prompt = agent
+        .get("prompt")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "agent has no prompt field".to_string())?;
+
+    let mut header = agent.clone();
+    if let Some(obj) = header.as_object_mut() {
+        obj.remove("prompt");
+    }
+
+    let yaml_str =
+        serde_yaml::to_string(&header).map_err(|e| format!("failed to convert to YAML: {e}"))?;
+
+    Ok(format!("---\n{yaml_str}---\n{prompt}"))
+}
+
 pub fn add_agent_to_config(config: &mut serde_json::Value, name: &str) -> Result<(), String> {
     let system_agents = list_system_agents();
 
