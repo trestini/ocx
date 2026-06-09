@@ -21,7 +21,7 @@ enum AgentCommands {
         system: bool,
     },
     /// Create a new agent specific for this project
-    New {
+    Create {
         /// Agent name
         name: String,
         /// Model that this agent must use
@@ -39,6 +39,11 @@ enum AgentCommands {
         /// Denied permissions
         #[arg(long = "denied", default_value = "*", value_delimiter = ',')]
         denied: Vec<String>,
+    },
+    /// Export an agent to markdown
+    Export {
+        /// Agent name
+        name: String,
     },
     /// Remove an agent from the current project
     Rm {
@@ -107,7 +112,7 @@ fn main() {
                 }
             }
         }
-        AgentCommands::New {
+        AgentCommands::Create {
             name,
             model,
             model_type,
@@ -116,7 +121,7 @@ fn main() {
             denied,
         } => {
             require_local_project();
-            println!("new agent:");
+            println!("create agent:");
             println!("  name: {name}");
             println!("  model: {model}");
             println!("  type: {model_type}");
@@ -125,6 +130,10 @@ fn main() {
             }
             println!("  allowed: {}", allowed.join(", "));
             println!("  denied: {}", denied.join(", "));
+        }
+        AgentCommands::Export { name } => {
+            require_local_project();
+            println!("export agent: {name}");
         }
         AgentCommands::Rm { name } => {
             require_local_project();
