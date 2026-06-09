@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::path::Path;
 
 #[derive(Parser)]
 struct Cli {
@@ -46,14 +47,37 @@ enum AgentCommands {
     },
 }
 
+fn require_local_project() {
+    if !Path::new(".opencode/opencode.json").is_file() {
+        println!("Local project was not created");
+        // TODO: re-evaluate exit codes
+        std::process::exit(1);
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
         AgentCommands::Add { name } => {
-            println!("add agent: {name}");
+            require_local_project();
+
+            let config = ocx_common::add_agent_to_config(name).unwrap_or_else(|e| {
+                println!("{e}");
+                // TODO: re-evaluate exit codes
+                std::process::exit(1);
+            });
+
+            ocx_common::write_local_config(&config).unwrap_or_else(|e| {
+                eprintln!("error: {e}");
+                std::process::exit(1);
+            });
+
+            println!("Agent {name} added to the project");
         }
         AgentCommands::List { system } => {
+            require_local_project();
+
             if !system {
                 println!("no agents configured");
                 return;
@@ -86,6 +110,7 @@ fn main() {
             allowed,
             denied,
         } => {
+            require_local_project();
             println!("new agent:");
             println!("  name: {name}");
             println!("  model: {model}");
@@ -97,6 +122,7 @@ fn main() {
             println!("  denied: {}", denied.join(", "));
         }
         AgentCommands::Rm { name } => {
+            require_local_project();
             println!("remove agent: {name}");
         }
     }

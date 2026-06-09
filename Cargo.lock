@@ -207,6 +207,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "ocx-common",
+ "serde_json",
 ]
 
 [[package]]
@@ -225,6 +226,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "ocx-common",
+ "serde_json",
 ]
 
 [[package]]
