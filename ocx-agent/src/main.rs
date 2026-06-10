@@ -1,6 +1,15 @@
 use clap::{Parser, Subcommand};
 use std::path::Path;
 
+fn parse_agent_type(s: &str) -> Result<String, String> {
+    match s {
+        "primary" | "subagent" => Ok(s.to_string()),
+        other => Err(format!(
+            "invalid agent type '{other}'; expected 'primary' or 'subagent'"
+        )),
+    }
+}
+
 #[derive(Parser)]
 struct Cli {
     #[command(subcommand)]
@@ -29,7 +38,7 @@ enum AgentCommands {
         #[arg(short = 'm', long = "model", required = true)]
         model: String,
         /// Model type (primary or subagent)
-        #[arg(short = 't', long = "type")]
+        #[arg(short = 't', long = "type", value_parser = parse_agent_type)]
         model_type: Option<String>,
         /// System instruction for the agent
         #[arg(short = 'p', long = "prompt")]
