@@ -1,3 +1,5 @@
+pub mod schema;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -108,6 +110,13 @@ pub fn read_and_convert_agent(path: &Path) -> Result<(String, serde_json::Value)
             serde_json::Value::String(body.to_string()),
         );
     }
+
+    schema::validate_agent_config(&base).map_err(|errors| {
+        format!(
+            "Agent '{agent_name}' is not valid. Fix the fields below:\n  - {}",
+            errors.join("\n  - ")
+        )
+    })?;
 
     Ok((agent_name, base))
 }

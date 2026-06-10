@@ -8,3 +8,8 @@ serde.workspace = true
 serde_json.workspace = true
 serde_yaml.workspace = true
 dirs = "5"
+ureq = { version = "3", default-features = false, features = ["rustls"] }
+jsonschema = "0.46"
+
+[build-dependencies]
+ureq = { version = "3", default-features = false, features = ["rustls"] }
