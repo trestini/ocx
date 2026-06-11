@@ -19,8 +19,6 @@ fn main() {
         return;
     }
 
-    fs::create_dir(opencode_dir).expect("failed to create .opencode directory");
-
     let mut config = serde_json::json!({
         "$schema": "https://opencode.ai/config.json"
     });
@@ -33,6 +31,8 @@ fn main() {
             });
         }
     }
+
+    fs::create_dir(opencode_dir).expect("Failed to create .opencode directory");
 
     ocx_common::write_local_config(&config).unwrap_or_else(|e| {
         eprintln!("error: {e}");
